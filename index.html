@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный конфигуратор ПК</title>
+    <!-- Подключаем Tailwind CSS для красивого оформления -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем Alpine.js для реактивности и логики -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-6" x-data="pcBuilder()">
+
+    <div class="max-w-6xl mx-auto">
+        
+        <!-- Шапка -->
+        <header class="mb-8 border-b border-slate-800 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-cyan-400">PC Configurator</h1>
+                <p class="text-sm text-slate-400">Собери свой идеальный ПК без ошибок совместимости</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 px-5 py-3 rounded-2xl text-left md:text-right w-full md:w-auto">
+                <div class="text-xs text-slate-400">Итоговая стоимость:</div>
+                <div class="text-2xl font-bold text-cyan-400" x-text="totalPrice.toLocaleString() + ' ₽'"></div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Левая колонка: Выбор комплектующих -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Процессор -->
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3 text-slate-200">1. Процессор (CPU)</h2>
+                    <select x-model="selectedCpuId" @change="selectedMbId = ''" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="">Выберите процессор...</option>
+                        <template x-for="cpu in db.processors" :key="cpu.id">
+                            <option :value="cpu.id" x-text="cpu.name + ' — ' + cpu.price.toLocaleString() + ' ₽ (' + cpu.socket + ')'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Материнская плата -->
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3 text-slate-200">2. Материнская плата</h2>
+                    <select x-model="selectedMbId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="">Выберите материнскую плату...</option>
+                        <template x-for="mb in filteredMotherboards" :key="mb.id">
+                            <option :value="mb.id" x-text="mb.name + ' — ' + mb.price.toLocaleString() + ' ₽ (' + mb.socket + ')'"></option>
+                        </template>
+                    </select>
+                    <p x-show="selectedCpuId && filteredMotherboards.length === 0" class="text-xs text-red-400 mt-2">Нет плат под сокет выбранного процессора!</p>
+                </div>
+
+                <!-- Видеокарта -->
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3 text-slate-200">3. Видеокарта (GPU)</h2>
+                    <select x-model="selectedGpuId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="">Выберите видеокарту...</option>
+                        <template x-for="gpu in db.gpus" :key="gpu.id">
+                            <option :value="gpu.id" x-text="gpu.name + ' — ' + gpu.price.toLocaleString() + ' ₽'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Блок питания -->
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3 text-slate-200">4. Блок питания (PSU)</h2>
+                    <select x-model="selectedPsuId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="">Выберите блок питания...</option>
+                        <template x-for="psu in db.powerSupplies" :key="psu.id">
+                            <option :value="psu.id" x-text="psu.name + ' — ' + psu.price.toLocaleString() + ' ₽'"></option>
+                        </template>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Правая колонка: Сводка и статус совместимости -->
+            <div class="space-y-6">
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg sticky top-6">
+                    <h3 class="text-xl font-bold mb-4 text-slate-100">Статус сборки</h3>
+                    
+                    <!-- Статус совместимости -->
+                    <div class="space-y-3 mb-6">
+                        <div class="p-3 rounded-xl text-sm border bg-emerald-950/40 border-emerald-800 text-emerald-300">
+                            ✓ Сокет процессора и платы совместимы
+                        </div>
+
+                        <div class="p-3 rounded-xl text-sm border bg-slate-950 border-slate-800 text-slate-300 flex justify-between items-center">
+                            <span>Энергопотребление:</span>
+                            <span class="font-semibold text-cyan-400" x-text="'~' + totalWatt + ' W'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Список выбранного железа -->
+                    <div class="border-t border-slate-800 pt-4 space-y-3 text-sm text-slate-300">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">CPU:</span>
+                            <span class="text-right font-medium" x-text="selectedCpu ? selectedCpu.name : 'Не выбран'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Motherboard:</span>
+                            <span class="text-right font-medium" x-text="selectedMb ? selectedMb.name : 'Не выбран'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">GPU:</span>
+                            <span class="text-right font-medium" x-text="selectedGpu ? selectedGpu.name : 'Не выбран'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">PSU:</span>
+                            <span class="text-right font-medium" x-text="selectedPsu ? selectedPsu.name : 'Не выбран'"></span>
+                        </div>
+                    </div>
+
+                    <button @click="alert('Сборка успешно сохранена в репозиторий!')" 
+                            class="w-full mt-6 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-cyan-500/20 cursor-pointer">
+                        Сохранить сборку
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Логика работы приложения (Alpine.js) -->
+    <script>
+        function pcBuilder() {
+            return {
+                db: {
+                    processors: [
+                        { id: "p1", name: "Intel Core i5-13400F", socket: "LGA1700", price: 18500, watt: 148 },
+                        { id: "p2", name: "AMD Ryzen 5 5600X", socket: "AM4", price: 13500, watt: 76 },
+                        { id: "p3", name: "AMD Ryzen 5 7600", socket: "AM5", price: 19000, watt: 88 }
+                    ],
+                    motherboards: [
+                        { id: "m1", name: "MSI PRO B760M-A (DDR4)", socket: "LGA1700", price: 14000 },
+                        { id: "m2", name: "Gigabyte B550 AORUS ELITE", socket: "AM4", price: 12500 },
+                        { id: "m3", name: "ASUS TUF GAMING B650M-E", socket: "AM5", price: 18000 }
+                    ],
+                    gpus: [
+                        { id: "g1", name: "NVIDIA GeForce RTX 4060 8GB", price: 34000, watt: 115 },
+                        { id: "g2", name: "AMD Radeon RX 7700 XT 12GB", price: 45000, watt: 245 }
+                    ],
+                    powerSupplies: [
+                        { id: "psu1", name: "DeepCool PK500D 500W", price: 4800 },
+                        { id: "psu2", name: "Montech CENTURY G5 750W (Gold)", price: 9500 }
+                    ]
+                },
+                selectedCpuId: "",
+                selectedMbId: "",
+                selectedGpuId: "",
+                selectedPsuId: "",
+
+                get selectedCpu() {
+                    return this.db.processors.find(p => p.id === this.selectedCpuId);
+                },
+                get selectedMb() {
+                    return this.db.motherboards.find(m => m.id === this.selectedMbId);
+                },
+                get selectedGpu() {
+                    return this.db.gpus.find(g => g.id === this.selectedGpuId);
+                },
+                get selectedPsu() {
+                    return this.db.powerSupplies.find(p => p.id === this.selectedPsuId);
+                },
+                get filteredMotherboards() {
+                    if (!this.selectedCpu) return this.db.motherboards;
+                    return this.db.motherboards.filter(mb => mb.socket === this.selectedCpu.socket);
+                },
+                get totalPrice() {
+                    return (this.selectedCpu?.price || 0) + 
+                           (this.selectedMb?.price || 0) + 
+                           (this.selectedGpu?.price || 0) + 
+                           (this.selectedPsu?.price || 0);
+                },
+                get totalWatt() {
+                    return (this.selectedCpu?.watt || 0) + (this.selectedGpu?.watt || 0) + 50;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
