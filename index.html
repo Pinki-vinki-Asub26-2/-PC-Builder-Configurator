@@ -3,183 +3,1121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Интерактивный конфигуратор ПК</title>
-    <!-- Подключаем Tailwind CSS для красивого оформления -->
+    <title>PC Configurator — Собери идеальный ПК</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Подключаем Alpine.js для реактивности и логики -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-6" x-data="pcBuilder()">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
 
-    <div class="max-w-6xl mx-auto">
-        
-        <!-- Шапка -->
-        <header class="mb-8 border-b border-slate-800 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-cyan-400">PC Configurator</h1>
-                <p class="text-sm text-slate-400">Собери свой идеальный ПК без ошибок совместимости</p>
+        body {
+            background: #060913;
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.15), transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(168, 85, 247, 0.15), transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05), transparent 60%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.08), transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.08), transparent 30%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.05); }
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.4), 0 0 60px rgba(6, 182, 212, 0.2);
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.4), 0 0 60px rgba(6, 182, 212, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.6), 0 0 80px rgba(6, 182, 212, 0.3); }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #a855f7 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease-in-out infinite;
+        }
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .gradient-border {
+            position: relative;
+            background: linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.85)) padding-box,
+                        linear-gradient(135deg, #22d3ee, #a855f7) border-box;
+            border: 2px solid transparent;
+        }
+
+        .status-dot {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .status-dot.green { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .status-dot.red { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .status-dot.amber { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+        .status-dot.gray { background: #475569; }
+
+        .status-dot.green::after,
+        .status-dot.red::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.green::after { border-color: #22c55e; color: #22c55e; }
+        .status-dot.red::after { border-color: #ef4444; color: #ef4444; }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.8); }
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+            padding-right: 3rem !important;
+            transition: all 0.3s ease;
+        }
+        select:not(:disabled):hover { border-color: rgba(6, 182, 212, 0.5); }
+        select option { background: #0f172a; color: #e2e8f0; }
+        select option:disabled { color: #475569; }
+
+        .image-placeholder {
+            background: linear-gradient(135deg, #0b1120 0%, #131c33 100%);
+            border: 1px dashed rgba(148, 163, 184, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .image-placeholder::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(148,163,184,0.03) 10px, rgba(148,163,184,0.03) 20px);
+        }
+        .image-placeholder::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 40%, rgba(6, 182, 212, 0.08) 50%, transparent 60%);
+            animation: shimmer 6s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+            100% { transform: translateX(50%) translateY(50%) rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .fade-in-up { animation: fadeInUp 0.5s ease-out both; }
+        .fade-in-scale { animation: fadeInScale 0.4s ease-out both; }
+
+        .component-card {
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .component-card:nth-child(1) { animation-delay: 0.1s; }
+        .component-card:nth-child(2) { animation-delay: 0.2s; }
+        .component-card:nth-child(3) { animation-delay: 0.3s; }
+        .component-card:nth-child(4) { animation-delay: 0.4s; }
+        .component-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .component-card.active {
+            border-color: rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.2);
+        }
+        .component-card.active .image-placeholder {
+            border-color: rgba(6, 182, 212, 0.4);
+            border-style: solid;
+        }
+        .component-card.active .number-badge {
+            background: linear-gradient(135deg, #22d3ee, #3b82f6);
+            color: white;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+        .component-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(6, 182, 212, 0.1);
+        }
+        .component-card:hover .image-placeholder svg {
+            transform: scale(1.1) rotate(-5deg);
+            transition: transform 0.4s ease;
+        }
+        .image-placeholder svg { transition: transform 0.4s ease; }
+
+        .power-bar {
+            height: 8px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .power-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .power-bar-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: barShimmer 2s infinite;
+        }
+        @keyframes barShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .save-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .save-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+        }
+        .save-btn:not(:disabled):active { transform: translateY(0); }
+        .save-btn:not(:disabled)::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        .save-btn:not(:disabled):hover::before { left: 100%; }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #22d3ee; }
+
+        .status-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .status-item.changed {
+            animation: statusFlash 0.6s ease-out;
+        }
+        @keyframes statusFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .overall-badge { transition: all 0.4s ease; }
+
+        /* FPS-таблица */
+        .fps-bar {
+            height: 6px;
+            border-radius: 3px;
+            transition: width 0.6s ease, background 0.4s ease;
+        }
+        .fps-bar.excellent { background: linear-gradient(90deg, #22c55e, #16a34a); }
+        .fps-bar.good { background: linear-gradient(90deg, #22d3ee, #3b82f6); }
+        .fps-bar.playable { background: linear-gradient(90deg, #f59e0b, #f97316); }
+        .fps-bar.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+        /* DNS кнопка */
+        .dns-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(234, 88, 12, 0.1);
+            color: #fb923c;
+            border: 1px solid rgba(234, 88, 12, 0.3);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .dns-btn:hover {
+            background: rgba(234, 88, 12, 0.2);
+            border-color: rgba(234, 88, 12, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+        }
+        .dns-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen p-4 md:p-6">
+
+    <div class="max-w-7xl mx-auto">
+
+        <!-- ===== Шапка ===== -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 fade-in-up">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center glow-cyan">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                        <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-extrabold gradient-text tracking-tight">PC Configurator</h1>
+                    <p class="text-sm text-slate-400 mt-1">Собери идеальную сборку без ошибок совместимости</p>
+                </div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 px-5 py-3 rounded-2xl text-left md:text-right w-full md:w-auto">
-                <div class="text-xs text-slate-400">Итоговая стоимость:</div>
-                <div class="text-2xl font-bold text-cyan-400" x-text="totalPrice.toLocaleString() + ' ₽'"></div>
+
+            <div class="glass rounded-2xl px-6 py-4 w-full md:w-auto hover:scale-105 transition-transform duration-300">
+                <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Итоговая стоимость</div>
+                <div id="totalPrice" class="text-3xl font-extrabold gradient-text">0 ₽</div>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Левая колонка: Выбор комплектующих -->
-            <div class="lg:col-span-2 space-y-6">
-                
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- ===== Левая колонка ===== -->
+            <div class="lg:col-span-2 space-y-5">
+
                 <!-- Процессор -->
-                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-slate-200">1. Процессор (CPU)</h2>
-                    <select x-model="selectedCpuId" @change="selectedMbId = ''" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
-                        <option value="">Выберите процессор...</option>
-                        <template x-for="cpu in db.processors" :key="cpu.id">
-                            <option :value="cpu.id" x-text="cpu.name + ' — ' + cpu.price.toLocaleString() + ' ₽ (' + cpu.socket + ')'"></option>
-                        </template>
-                    </select>
+                <div id="cpuCard" class="component-card glass rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row">
+                        <div class="image-placeholder sm:w-48 h-40 sm:h-auto flex flex-col items-center justify-center text-slate-500 flex-shrink-0">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                <rect x="9" y="9" width="6" height="6"/>
+                                <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+                            </svg>
+                            <span class="text-xs uppercase tracking-wider relative z-10">Фото CPU</span>
+                            <span class="text-[10px] mt-1 opacity-60 relative z-10">замени на &lt;img&gt;</span>
+                        </div>
+                        <div class="flex-1 p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="number-badge text-xs font-bold px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 transition-all">01</span>
+                                <h2 class="text-lg font-bold text-slate-100">Процессор</h2>
+                            </div>
+                            <select id="cpuSelect" class="w-full bg-slate-950/70 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="">Выберите процессор...</option>
+                            </select>
+                            <div class="mt-3 flex items-center justify-between">
+                                <p id="cpuInfo" class="text-sm text-slate-400"></p>
+                                <a id="cpuDnsLink" class="dns-btn hidden" href="#" target="_blank" rel="noopener">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Найти в DNS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Материнская плата -->
-                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-slate-200">2. Материнская плата</h2>
-                    <select x-model="selectedMbId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
-                        <option value="">Выберите материнскую плату...</option>
-                        <template x-for="mb in filteredMotherboards" :key="mb.id">
-                            <option :value="mb.id" x-text="mb.name + ' — ' + mb.price.toLocaleString() + ' ₽ (' + mb.socket + ')'"></option>
-                        </template>
-                    </select>
-                    <p x-show="selectedCpuId && filteredMotherboards.length === 0" class="text-xs text-red-400 mt-2">Нет плат под сокет выбранного процессора!</p>
+                <div id="mbCard" class="component-card glass rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row">
+                        <div class="image-placeholder sm:w-48 h-40 sm:h-auto flex flex-col items-center justify-center text-slate-500 flex-shrink-0">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <rect x="7" y="7" width="5" height="5"/>
+                                <circle cx="16" cy="9" r="1.5"/>
+                                <circle cx="16" cy="15" r="1.5"/>
+                                <path d="M7 15h5"/>
+                            </svg>
+                            <span class="text-xs uppercase tracking-wider relative z-10">Фото платы</span>
+                            <span class="text-[10px] mt-1 opacity-60 relative z-10">замени на &lt;img&gt;</span>
+                        </div>
+                        <div class="flex-1 p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="number-badge text-xs font-bold px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 transition-all">02</span>
+                                <h2 class="text-lg font-bold text-slate-100">Материнская плата</h2>
+                            </div>
+                            <select id="mbSelect" class="w-full bg-slate-950/70 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="">Сначала выберите процессор...</option>
+                            </select>
+                            <div class="mt-3 flex items-center justify-between">
+                                <p id="mbWarning" class="text-sm text-amber-400 hidden">⚠ Нет плат под сокет выбранного процессора!</p>
+                                <a id="mbDnsLink" class="dns-btn hidden" href="#" target="_blank" rel="noopener">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Найти в DNS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Видеокарта -->
-                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-slate-200">3. Видеокарта (GPU)</h2>
-                    <select x-model="selectedGpuId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
-                        <option value="">Выберите видеокарту...</option>
-                        <template x-for="gpu in db.gpus" :key="gpu.id">
-                            <option :value="gpu.id" x-text="gpu.name + ' — ' + gpu.price.toLocaleString() + ' ₽'"></option>
-                        </template>
-                    </select>
+                <div id="gpuCard" class="component-card glass rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row">
+                        <div class="image-placeholder sm:w-48 h-40 sm:h-auto flex flex-col items-center justify-center text-slate-500 flex-shrink-0">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <rect x="2" y="7" width="18" height="10" rx="2"/>
+                                <circle cx="7" cy="12" r="2.5"/>
+                                <circle cx="14" cy="12" r="2.5"/>
+                                <path d="M20 11h2M20 13h2"/>
+                            </svg>
+                            <span class="text-xs uppercase tracking-wider relative z-10">Фото GPU</span>
+                            <span class="text-[10px] mt-1 opacity-60 relative z-10">замени на &lt;img&gt;</span>
+                        </div>
+                        <div class="flex-1 p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="number-badge text-xs font-bold px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 transition-all">03</span>
+                                <h2 class="text-lg font-bold text-slate-100">Видеокарта</h2>
+                            </div>
+                            <select id="gpuSelect" class="w-full bg-slate-950/70 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="">Выберите видеокарту...</option>
+                            </select>
+                            <div class="mt-3 flex items-center justify-between">
+                                <p id="gpuInfo" class="text-sm text-slate-400"></p>
+                                <a id="gpuDnsLink" class="dns-btn hidden" href="#" target="_blank" rel="noopener">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Найти в DNS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Блок питания -->
-                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-slate-200">4. Блок питания (PSU)</h2>
-                    <select x-model="selectedPsuId" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
-                        <option value="">Выберите блок питания...</option>
-                        <template x-for="psu in db.powerSupplies" :key="psu.id">
-                            <option :value="psu.id" x-text="psu.name + ' — ' + psu.price.toLocaleString() + ' ₽'"></option>
-                        </template>
-                    </select>
+                <div id="psuCard" class="component-card glass rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row">
+                        <div class="image-placeholder sm:w-48 h-40 sm:h-auto flex flex-col items-center justify-center text-slate-500 flex-shrink-0">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                <circle cx="12" cy="12" r="4"/>
+                                <path d="M12 8v2M12 14v2M8 12h2M14 12h2"/>
+                            </svg>
+                            <span class="text-xs uppercase tracking-wider relative z-10">Фото БП</span>
+                            <span class="text-[10px] mt-1 opacity-60 relative z-10">замени на &lt;img&gt;</span>
+                        </div>
+                        <div class="flex-1 p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="number-badge text-xs font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-all">04</span>
+                                <h2 class="text-lg font-bold text-slate-100">Блок питания</h2>
+                            </div>
+                            <select id="psuSelect" class="w-full bg-slate-950/70 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="">Выберите блок питания...</option>
+                            </select>
+                            <div class="mt-3 flex items-center justify-between">
+                                <p id="psuInfo" class="text-sm text-slate-400"></p>
+                                <a id="psuDnsLink" class="dns-btn hidden" href="#" target="_blank" rel="noopener">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Найти в DNS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Корпус -->
+                <div id="caseCard" class="component-card glass rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row">
+                        <div class="image-placeholder sm:w-48 h-40 sm:h-auto flex flex-col items-center justify-center text-slate-500 flex-shrink-0">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                                <circle cx="12" cy="16" r="2"/>
+                                <path d="M8 6h8M8 9h5"/>
+                            </svg>
+                            <span class="text-xs uppercase tracking-wider relative z-10">Фото корпуса</span>
+                            <span class="text-[10px] mt-1 opacity-60 relative z-10">замени на &lt;img&gt;</span>
+                        </div>
+                        <div class="flex-1 p-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="number-badge text-xs font-bold px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 transition-all">05</span>
+                                <h2 class="text-lg font-bold text-slate-100">Корпус</h2>
+                            </div>
+                            <select id="caseSelect" class="w-full bg-slate-950/70 border border-slate-700/50 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="">Сначала выберите материнскую плату...</option>
+                            </select>
+                            <div class="mt-3 flex items-center justify-between">
+                                <p id="caseWarning" class="text-sm text-amber-400 hidden">⚠ Нет корпусов под форм-фактор платы!</p>
+                                <a id="caseDnsLink" class="dns-btn hidden" href="#" target="_blank" rel="noopener">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Найти в DNS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== ТЕСТЫ В ИГРАХ ===== -->
+                <div id="gameTestsCard" class="component-card glass rounded-2xl overflow-hidden hidden">
+                    <div class="p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">🎮</span>
+                            <h2 class="text-lg font-bold text-slate-100">Тесты в играх</h2>
+                            <span class="text-xs text-slate-500 ml-auto" id="gameTestSubtitle"></span>
+                        </div>
+                        <div id="gameTestsContent" class="space-y-3"></div>
+                        <p class="text-[10px] text-slate-600 mt-4">* Данные основаны на средних замерах fpsbench.com при 1080p High. Реальная производительность может отличаться.</p>
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Правая колонка: Сводка и статус совместимости -->
-            <div class="space-y-6">
-                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg sticky top-6">
-                    <h3 class="text-xl font-bold mb-4 text-slate-100">Статус сборки</h3>
-                    
-                    <!-- Статус совместимости -->
+            <!-- ===== Правая колонка ===== -->
+            <div class="space-y-5">
+                <div class="glass rounded-2xl p-6 sticky top-6 gradient-border fade-in-scale">
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-700/50">
+                        <h2 class="text-lg font-bold text-slate-100">Статус сборки</h2>
+                        <div id="overallBadge" class="overall-badge text-xs font-semibold px-3 py-1 rounded-full bg-slate-700/50 text-slate-400">
+                            Не готова
+                        </div>
+                    </div>
+
+                    <!-- Итоговая сводка -->
                     <div class="space-y-3 mb-6">
-                        <div class="p-3 rounded-xl text-sm border bg-emerald-950/40 border-emerald-800 text-emerald-300">
-                            ✓ Сокет процессора и платы совместимы
+                        <div class="p-3 rounded-xl bg-slate-900/50">
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Процессор</span>
+                                <span id="summaryCpu" class="text-sm text-slate-300 font-medium">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Материнская плата</span>
+                                <span id="summaryMb" class="text-sm text-slate-300 font-medium">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Видеокарта</span>
+                                <span id="summaryGpu" class="text-sm text-slate-300 font-medium">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Блок питания</span>
+                                <span id="summaryPsu" class="text-sm text-slate-300 font-medium">—</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Корпус</span>
+                                <span id="summaryCase" class="text-sm text-slate-300 font-medium">—</span>
+                            </div>
                         </div>
 
-                        <div class="p-3 rounded-xl text-sm border bg-slate-950 border-slate-800 text-slate-300 flex justify-between items-center">
-                            <span>Энергопотребление:</span>
-                            <span class="font-semibold text-cyan-400" x-text="'~' + totalWatt + ' W'"></span>
+                        <!-- Итоговая цена -->
+                        <div class="p-3 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Итого</span>
+                                <span id="summaryPrice" class="text-xl font-extrabold gradient-text">0 ₽</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Список выбранного железа -->
-                    <div class="border-t border-slate-800 pt-4 space-y-3 text-sm text-slate-300">
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">CPU:</span>
-                            <span class="text-right font-medium" x-text="selectedCpu ? selectedCpu.name : 'Не выбран'"></span>
+                    <!-- Проверки совместимости -->
+                    <div class="space-y-3 mb-6">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Проверка совместимости</h3>
+                        <div id="socketStatus" class="status-item flex items-center gap-3 text-sm p-3 rounded-xl bg-slate-900/50">
+                            <span class="status-dot gray"></span>
+                            <span class="text-slate-400">Сокет не выбран</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Motherboard:</span>
-                            <span class="text-right font-medium" x-text="selectedMb ? selectedMb.name : 'Не выбран'"></span>
+                        <div id="formStatus" class="status-item flex items-center gap-3 text-sm p-3 rounded-xl bg-slate-900/50">
+                            <span class="status-dot gray"></span>
+                            <span class="text-slate-400">Форм-фактор не выбран</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">GPU:</span>
-                            <span class="text-right font-medium" x-text="selectedGpu ? selectedGpu.name : 'Не выбран'"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">PSU:</span>
-                            <span class="text-right font-medium" x-text="selectedPsu ? selectedPsu.name : 'Не выбран'"></span>
+                        <div id="powerStatus" class="status-item flex items-center gap-3 text-sm p-3 rounded-xl bg-slate-900/50">
+                            <span class="status-dot gray"></span>
+                            <span class="text-slate-400">Мощность не проверена</span>
                         </div>
                     </div>
 
-                    <button @click="alert('Сборка успешно сохранена в репозиторий!')" 
-                            class="w-full mt-6 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-cyan-500/20 cursor-pointer">
-                        Сохранить сборку
+                    <!-- Энергопотребление -->
+                    <div class="border-t border-slate-700/50 pt-5">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Энергопотребление</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Процессор</span>
+                                <span id="cpuPower" class="text-slate-200 font-semibold">0 Вт</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Материнская плата</span>
+                                <span id="mbPower" class="text-slate-200 font-semibold">0 Вт</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Видеокарта</span>
+                                <span id="gpuPower" class="text-slate-200 font-semibold">0 Вт</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-4 border-t border-slate-700/50">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-slate-400">Общее потребление</span>
+                                <span id="totalPower" class="text-lg font-extrabold gradient-text">0 Вт</span>
+                            </div>
+                            <div class="power-bar">
+                                <div id="powerBarFill" class="power-bar-fill" style="width: 0%; background: #22d3ee;"></div>
+                            </div>
+                            <div id="psuCapacity" class="text-xs text-slate-500 mt-2 text-right">Мощность БП: — Вт</div>
+                        </div>
+                    </div>
+
+                    <button id="saveBtn" class="save-btn w-full mt-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-4 px-4 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:hover:transform-none" disabled>
+                        <span class="relative z-10 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                <polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            Сохранить сборку
+                        </span>
                     </button>
+
+                    <p id="saveMessage" class="mt-3 text-sm text-green-400 text-center hidden fade-in-up">
+                        ✓ Сборка сохранена!
+                    </p>
                 </div>
             </div>
-
         </div>
+
+        <footer class="mt-12 text-center text-xs text-slate-600 fade-in-up">
+            PC Configurator © 2025 · Собирай с умом
+        </footer>
     </div>
 
-    <!-- Логика работы приложения (Alpine.js) -->
     <script>
-        function pcBuilder() {
-            return {
-                db: {
-                    processors: [
-                        { id: "p1", name: "Intel Core i5-13400F", socket: "LGA1700", price: 18500, watt: 148 },
-                        { id: "p2", name: "AMD Ryzen 5 5600X", socket: "AM4", price: 13500, watt: 76 },
-                        { id: "p3", name: "AMD Ryzen 5 7600", socket: "AM5", price: 19000, watt: 88 }
-                    ],
-                    motherboards: [
-                        { id: "m1", name: "MSI PRO B760M-A (DDR4)", socket: "LGA1700", price: 14000 },
-                        { id: "m2", name: "Gigabyte B550 AORUS ELITE", socket: "AM4", price: 12500 },
-                        { id: "m3", name: "ASUS TUF GAMING B650M-E", socket: "AM5", price: 18000 }
-                    ],
-                    gpus: [
-                        { id: "g1", name: "NVIDIA GeForce RTX 4060 8GB", price: 34000, watt: 115 },
-                        { id: "g2", name: "AMD Radeon RX 7700 XT 12GB", price: 45000, watt: 245 }
-                    ],
-                    powerSupplies: [
-                        { id: "psu1", name: "DeepCool PK500D 500W", price: 4800 },
-                        { id: "psu2", name: "Montech CENTURY G5 750W (Gold)", price: 9500 }
-                    ]
-                },
-                selectedCpuId: "",
-                selectedMbId: "",
-                selectedGpuId: "",
-                selectedPsuId: "",
+        // ========================
+        // База данных
+        // ========================
+        const db = {
+            processors: [
+                { id: 'cpu1', name: 'Intel Core i5-13400F', socket: 'LGA1700', power: 65, price: 18000 },
+                { id: 'cpu2', name: 'Intel Core i7-13700K', socket: 'LGA1700', power: 125, price: 35000 },
+                { id: 'cpu3', name: 'AMD Ryzen 5 7600X', socket: 'AM5', power: 105, price: 22000 },
+                { id: 'cpu4', name: 'AMD Ryzen 7 7800X3D', socket: 'AM5', power: 120, price: 40000 },
+            ],
+            motherboards: [
+                { id: 'mb1', name: 'MSI PRO B760-P', socket: 'LGA1700', formFactor: 'ATX', power: 15, price: 12000 },
+                { id: 'mb2', name: 'ASUS ROG STRIX Z790', socket: 'LGA1700', formFactor: 'ATX', power: 20, price: 28000 },
+                { id: 'mb3', name: 'Gigabyte B650 AORUS', socket: 'AM5', formFactor: 'ATX', power: 18, price: 18000 },
+                { id: 'mb4', name: 'ASRock X670E Taichi', socket: 'AM5', formFactor: 'E-ATX', power: 22, price: 35000 },
+                { id: 'mb5', name: 'ASUS Prime B650M', socket: 'AM5', formFactor: 'mATX', power: 14, price: 14000 },
+                { id: 'mb6', name: 'MSI B760M Mortar', socket: 'LGA1700', formFactor: 'mATX', power: 16, price: 15000 },
+            ],
+            gpus: [
+                { id: 'gpu1', name: 'NVIDIA RTX 4060', power: 115, price: 30000 },
+                { id: 'gpu2', name: 'NVIDIA RTX 4070', power: 200, price: 55000 },
+                { id: 'gpu3', name: 'AMD Radeon RX 7600', power: 165, price: 27000 },
+                { id: 'gpu4', name: 'AMD Radeon RX 7800 XT', power: 263, price: 50000 },
+            ],
+            psus: [
+                { id: 'psu1', name: 'Corsair RM650e', power: 650, price: 8000 },
+                { id: 'psu2', name: 'Seasonic Focus GX-750', power: 750, price: 11000 },
+                { id: 'psu3', name: 'be quiet! Pure Power 12 M 850W', power: 850, price: 14000 },
+                { id: 'psu4', name: 'Thermaltake Toughpower GF3 1000W', power: 1000, price: 18000 },
+            ],
+            cases: [
+                { id: 'case1', name: 'NZXT H5 Flow', formFactors: ['ATX', 'mATX', 'ITX'], price: 9000 },
+                { id: 'case2', name: 'Fractal Design North', formFactors: ['ATX', 'mATX', 'ITX'], price: 14000 },
+                { id: 'case3', name: 'Lian Li O11 Dynamic Mini', formFactors: ['mATX', 'ITX'], price: 12000 },
+                { id: 'case4', name: 'Cooler Master NR200', formFactors: ['ITX'], price: 8000 },
+                { id: 'case5', name: 'Corsair 7000D Airflow', formFactors: ['E-ATX', 'ATX', 'mATX', 'ITX'], price: 20000 },
+            ]
+        };
 
-                get selectedCpu() {
-                    return this.db.processors.find(p => p.id === this.selectedCpuId);
-                },
-                get selectedMb() {
-                    return this.db.motherboards.find(m => m.id === this.selectedMbId);
-                },
-                get selectedGpu() {
-                    return this.db.gpus.find(g => g.id === this.selectedGpuId);
-                },
-                get selectedPsu() {
-                    return this.db.powerSupplies.find(p => p.id === this.selectedPsuId);
-                },
-                get filteredMotherboards() {
-                    if (!this.selectedCpu) return this.db.motherboards;
-                    return this.db.motherboards.filter(mb => mb.socket === this.selectedCpu.socket);
-                },
-                get totalPrice() {
-                    return (this.selectedCpu?.price || 0) + 
-                           (this.selectedMb?.price || 0) + 
-                           (this.selectedGpu?.price || 0) + 
-                           (this.selectedPsu?.price || 0);
-                },
-                get totalWatt() {
-                    return (this.selectedCpu?.watt || 0) + (this.selectedGpu?.watt || 0) + 50;
-                }
+        // ========================
+        // FPS данные для комбинаций CPU+GPU
+        // ========================
+        const fpsData = {
+            'cpu1_gpu1': { cpu: 'i5-13400F', gpu: 'RTX 4060', games: [
+                { name: 'Evolve', fps: 115, setting: '1080p High' },
+                { name: 'Ready Or Not', fps: 263, setting: '1080p High' },
+                { name: 'Steamworld Build', fps: 87, setting: '1080p Ultra' },
+                { name: 'Fallout 4 (DLSS)', fps: 128, setting: '1080p High' },
+            ]},
+            'cpu1_gpu2': { cpu: 'i5-13400F', gpu: 'RTX 4070', games: [
+                { name: 'Greedfall', fps: 178, setting: '1080p High' },
+                { name: 'Warzone', fps: 207, setting: '1080p Low' },
+                { name: 'Fortnite', fps: 140, setting: '1440p Ultra' },
+                { name: 'Cyberpunk 2077', fps: 60, setting: '1440p Ultra' },
+            ]},
+            'cpu2_gpu1': { cpu: 'i7-13700K', gpu: 'RTX 4060', games: [
+                { name: 'Evolve', fps: 120, setting: '1080p High' },
+                { name: 'CS2', fps: 250, setting: '1080p High' },
+                { name: 'Valorant', fps: 400, setting: '1080p High' },
+            ]},
+            'cpu2_gpu2': { cpu: 'i7-13700K', gpu: 'RTX 4070', games: [
+                { name: 'Greedfall', fps: 178, setting: '1080p High' },
+                { name: 'Warzone', fps: 207, setting: '1080p Low' },
+                { name: 'Cyberpunk 2077', fps: 65, setting: '1440p Ultra' },
+                { name: 'Red Dead Redemption 2', fps: 90, setting: '1440p Ultra' },
+            ]},
+            'cpu3_gpu3': { cpu: 'Ryzen 5 7600X', gpu: 'RX 7600', games: [
+                { name: 'Hard West', fps: 103, setting: '1080p High' },
+                { name: 'Don\'t Starve Together', fps: 120, setting: '1080p High' },
+                { name: 'Evolve', fps: 111, setting: '1440p Low' },
+                { name: 'GTA V', fps: 170, setting: '1080p High' },
+                { name: 'Baldur\'s Gate 3', fps: 110, setting: '1080p High' },
+            ]},
+            'cpu4_gpu4': { cpu: 'Ryzen 7 7800X3D', gpu: 'RX 7800 XT', games: [
+                { name: 'Archeage', fps: 112, setting: '1080p High' },
+                { name: 'Warzone', fps: 179, setting: '1080p Low' },
+                { name: 'Fortnite', fps: 240, setting: '1440p Max' },
+                { name: 'ARC Raiders', fps: 157, setting: '1440p High' },
+            ]},
+            'cpu1_gpu3': { cpu: 'i5-13400F', gpu: 'RX 7600', games: [
+                { name: 'Hard West', fps: 100, setting: '1080p High' },
+                { name: 'GTA V', fps: 160, setting: '1080p High' },
+                { name: 'CS2', fps: 200, setting: '1080p High' },
+            ]},
+            'cpu2_gpu4': { cpu: 'i7-13700K', gpu: 'RX 7800 XT', games: [
+                { name: 'Warzone', fps: 180, setting: '1080p Low' },
+                { name: 'Fortnite', fps: 230, setting: '1440p Max' },
+                { name: 'Cyberpunk 2077', fps: 70, setting: '1440p Ultra' },
+            ]},
+            'cpu3_gpu1': { cpu: 'Ryzen 5 7600X', gpu: 'RTX 4060', games: [
+                { name: 'Evolve', fps: 110, setting: '1080p High' },
+                { name: 'Ready Or Not', fps: 250, setting: '1080p High' },
+                { name: 'CS2', fps: 220, setting: '1080p High' },
+            ]},
+            'cpu4_gpu2': { cpu: 'Ryzen 7 7800X3D', gpu: 'RTX 4070', games: [
+                { name: 'Greedfall', fps: 190, setting: '1080p High' },
+                { name: 'Warzone', fps: 210, setting: '1080p Low' },
+                { name: 'Cyberpunk 2077', fps: 68, setting: '1440p Ultra' },
+            ]},
+        };
+
+        let state = { cpuId: '', mbId: '', gpuId: '', psuId: '', caseId: '' };
+
+        function getItemById(collection, id) {
+            return db[collection].find(item => item.id === id) || null;
+        }
+
+        function formatPrice(price) {
+            return price.toLocaleString('ru-RU') + ' ₽';
+        }
+
+        // ========================
+        // Анимация числа цены
+        // ========================
+        let currentPrice = 0;
+        function animatePrice(targetPrice) {
+            const el = document.getElementById('totalPrice');
+            const start = currentPrice;
+            const duration = 500;
+            const startTime = performance.now();
+
+            function step(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const value = Math.round(start + (targetPrice - start) * eased);
+                el.textContent = formatPrice(value);
+                if (progress < 1) requestAnimationFrame(step);
+                else currentPrice = targetPrice;
+            }
+            requestAnimationFrame(step);
+        }
+
+        // ========================
+        // Заполнение селектов
+        // ========================
+        function populateSelect(selectId, collection, placeholder, formatter) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            db[collection].forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = formatter(item);
+                select.appendChild(option);
+            });
+        }
+
+        // ========================
+        // Обновление DNS-ссылок
+        // ========================
+        function updateDnsLink(elementId, item) {
+            const link = document.getElementById(elementId);
+            if (item) {
+                link.href = 'https://www.dns-shop.ru/search/?q=' + encodeURIComponent(item.name);
+                link.classList.remove('hidden');
+                link.classList.add('dns-btn');
+            } else {
+                link.classList.add('hidden');
+                link.classList.remove('dns-btn');
             }
         }
+
+        // ========================
+        // Отображение тестов в играх
+        // ========================
+        function renderGameTests(cpu, gpu) {
+            const card = document.getElementById('gameTestsCard');
+            const content = document.getElementById('gameTestsContent');
+            const subtitle = document.getElementById('gameTestSubtitle');
+
+            if (!cpu || !gpu) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            const key = cpu.id + '_' + gpu.id;
+            const data = fpsData[key];
+
+            if (!data) {
+                // Ищем по отдельности
+                let found = null;
+                for (const [k, v] of Object.entries(fpsData)) {
+                    const [cId, gId] = k.split('_');
+                    if (cId === cpu.id && gId === gpu.id) { found = v; break; }
+                }
+                if (!found) {
+                    card.classList.add('hidden');
+                    return;
+                }
+            }
+
+            const testData = fpsData[key] || null;
+            if (!testData) {
+                // Показываем generic данные для GPU
+                card.classList.remove('hidden');
+                subtitle.textContent = gpu.name + ' · 1080p High (оценочно)';
+                content.innerHTML = `
+                    <div class="p-3 rounded-xl bg-slate-900/50 text-sm text-slate-400">
+                        Точные данные для этой комбинации пока не добавлены. 
+                        Ориентируйтесь на производительность видеокарты <span class="text-slate-200 font-semibold">${gpu.name}</span>.
+                    </div>
+                `;
+                return;
+            }
+
+            card.classList.remove('hidden');
+            subtitle.textContent = `${testData.cpu} + ${testData.gpu}`;
+
+            content.innerHTML = testData.games.map(game => {
+                const fps = game.fps;
+                let barClass, label;
+                if (fps >= 120) { barClass = 'excellent'; label = 'Отлично'; }
+                else if (fps >= 60) { barClass = 'good'; label = 'Хорошо'; }
+                else if (fps >= 30) { barClass = 'playable'; label = 'Играбельно'; }
+                else { barClass = 'low'; label = 'Мало'; }
+
+                const width = Math.min((fps / 300) * 100, 100);
+
+                return `
+                    <div class="p-3 rounded-xl bg-slate-900/50 transition-all hover:bg-slate-900/70">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-slate-200">${game.name}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-500">${game.setting}</span>
+                                <span class="text-sm font-bold ${fps >= 120 ? 'text-green-400' : fps >= 60 ? 'text-cyan-400' : fps >= 30 ? 'text-amber-400' : 'text-red-400'}">${fps} FPS</span>
+                            </div>
+                        </div>
+                        <div class="fps-bar-bg" style="height:4px; background:rgba(148,163,184,0.1); border-radius:2px; overflow:hidden;">
+                            <div class="fps-bar ${barClass}" style="width:${width}%; height:100%;"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-600 mt-1">${label}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========================
+        // Обновление UI
+        // ========================
+        function updateUI() {
+            const cpu = getItemById('processors', state.cpuId);
+            const mb = getItemById('motherboards', state.mbId);
+            const gpu = getItemById('gpus', state.gpuId);
+            const psu = getItemById('psus', state.psuId);
+            const pcCase = getItemById('cases', state.caseId);
+
+            // ---- Цена ----
+            const totalPrice = (cpu?.price || 0) + (mb?.price || 0) + (gpu?.price || 0) + (psu?.price || 0) + (pcCase?.price || 0);
+            animatePrice(totalPrice);
+            document.getElementById('summaryPrice').textContent = formatPrice(totalPrice);
+
+            // ---- Итоговая сводка ----
+            document.getElementById('summaryCpu').textContent = cpu ? cpu.name : '—';
+            document.getElementById('summaryMb').textContent = mb ? mb.name : '—';
+            document.getElementById('summaryGpu').textContent = gpu ? gpu.name : '—';
+            document.getElementById('summaryPsu').textContent = psu ? psu.name : '—';
+            document.getElementById('summaryCase').textContent = pcCase ? pcCase.name : '—';
+
+            // ---- Инфо ----
+            document.getElementById('cpuInfo').textContent = cpu ? `🔹 ${cpu.socket} · ${cpu.power} Вт` : '';
+            document.getElementById('gpuInfo').textContent = gpu ? `🔹 ${gpu.power} Вт` : '';
+            document.getElementById('psuInfo').textContent = psu ? `🔹 ${psu.power} Вт` : '';
+
+            // ---- DNS-ссылки ----
+            updateDnsLink('cpuDnsLink', cpu);
+            updateDnsLink('mbDnsLink', mb);
+            updateDnsLink('gpuDnsLink', gpu);
+            updateDnsLink('psuDnsLink', psu);
+            updateDnsLink('caseDnsLink', pcCase);
+
+            // ---- Активные карточки ----
+            document.getElementById('cpuCard').classList.toggle('active', !!cpu);
+            document.getElementById('mbCard').classList.toggle('active', !!mb);
+            document.getElementById('gpuCard').classList.toggle('active', !!gpu);
+            document.getElementById('psuCard').classList.toggle('active', !!psu);
+            document.getElementById('caseCard').classList.toggle('active', !!pcCase);
+
+            // ========================================
+            // ФИЛЬТРАЦИЯ МАТЕРИНОК
+            // ========================================
+            const mbSelect = document.getElementById('mbSelect');
+            const mbWarning = document.getElementById('mbWarning');
+            const mbOptions = Array.from(mbSelect.options).filter(o => o.value);
+
+            if (cpu) {
+                let availableCount = 0;
+                mbOptions.forEach(opt => {
+                    const mbItem = getItemById('motherboards', opt.value);
+                    const compatible = mbItem && mbItem.socket === cpu.socket;
+                    opt.disabled = !compatible;
+                    opt.textContent = compatible
+                        ? `${mbItem.name} (${mbItem.formFactor}) — ${formatPrice(mbItem.price)}`
+                        : `❌ ${mbItem.name} — несовместим (${mbItem.socket})`;
+                    if (compatible) availableCount++;
+                });
+
+                const currentMb = getItemById('motherboards', state.mbId);
+                if (currentMb && currentMb.socket !== cpu.socket) {
+                    state.mbId = '';
+                    mbSelect.value = '';
+                } else {
+                    mbSelect.value = state.mbId;
+                }
+
+                mbWarning.classList.toggle('hidden', availableCount > 0);
+            } else {
+                mbOptions.forEach(opt => {
+                    const mbItem = getItemById('motherboards', opt.value);
+                    opt.disabled = false;
+                    opt.textContent = `${mbItem.name} (${mbItem.formFactor}) — ${formatPrice(mbItem.price)}`;
+                });
+                mbSelect.value = state.mbId;
+                mbWarning.classList.add('hidden');
+            }
+
+            // ========================================
+            // ФИЛЬТРАЦИЯ КОРПУСОВ
+            // ========================================
+            const caseSelect = document.getElementById('caseSelect');
+            const caseWarning = document.getElementById('caseWarning');
+            const caseOptions = Array.from(caseSelect.options).filter(o => o.value);
+
+            if (mb) {
+                let availableCount = 0;
+                caseOptions.forEach(opt => {
+                    const caseItem = getItemById('cases', opt.value);
+                    const compatible = caseItem && caseItem.formFactors.includes(mb.formFactor);
+                    opt.disabled = !compatible;
+                    opt.textContent = compatible
+                        ? `${caseItem.name} (${caseItem.formFactors.join('/')}) — ${formatPrice(caseItem.price)}`
+                        : `❌ ${caseItem.name} — не подходит под ${mb.formFactor}`;
+                    if (compatible) availableCount++;
+                });
+
+                const currentCase = getItemById('cases', state.caseId);
+                if (currentCase && !currentCase.formFactors.includes(mb.formFactor)) {
+                    state.caseId = '';
+                    caseSelect.value = '';
+                } else {
+                    caseSelect.value = state.caseId;
+                }
+
+                caseWarning.classList.toggle('hidden', availableCount > 0);
+            } else {
+                caseOptions.forEach(opt => {
+                    const caseItem = getItemById('cases', opt.value);
+                    opt.disabled = false;
+                    opt.textContent = `${caseItem.name} (${caseItem.formFactors.join('/')}) — ${formatPrice(caseItem.price)}`;
+                });
+                caseSelect.value = state.caseId;
+                caseWarning.classList.add('hidden');
+            }
+
+            // ---- Энергопотребление ----
+            const cpuPower = cpu?.power || 0;
+            const mbPower = mb?.power || 0;
+            const gpuPower = gpu?.power || 0;
+            const totalPower = cpuPower + mbPower + gpuPower;
+
+            document.getElementById('cpuPower').textContent = cpuPower + ' Вт';
+            document.getElementById('mbPower').textContent = mbPower + ' Вт';
+            document.getElementById('gpuPower').textContent = gpuPower + ' Вт';
+            document.getElementById('totalPower').textContent = totalPower + ' Вт';
+            document.getElementById('psuCapacity').textContent = psu ? `Мощность БП: ${psu.power} Вт` : 'Мощность БП: — Вт';
+
+            // ---- Прогресс-бар ----
+            const barFill = document.getElementById('powerBarFill');
+            if (psu && totalPower > 0) {
+                const percent = Math.min((totalPower / psu.power) * 100, 100);
+                barFill.style.width = percent + '%';
+                if (totalPower > psu.power) {
+                    barFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                } else if (percent > 80) {
+                    barFill.style.background = 'linear-gradient(90deg, #f59e0b, #f97316)';
+                } else {
+                    barFill.style.background = 'linear-gradient(90deg, #22d3ee, #3b82f6)';
+                }
+            } else {
+                barFill.style.width = '0%';
+            }
+
+            // ---- Статус сокета ----
+            const socketStatus = document.getElementById('socketStatus');
+            if (cpu && mb) {
+                if (cpu.socket === mb.socket) {
+                    socketStatus.innerHTML = '<span class="status-dot green"></span><span class="text-green-400">Сокет совместим</span>';
+                } else {
+                    socketStatus.innerHTML = '<span class="status-dot red"></span><span class="text-red-400">Несовместимые сокеты!</span>';
+                }
+            } else {
+                socketStatus.innerHTML = '<span class="status-dot gray"></span><span class="text-slate-400">Сокет не выбран</span>';
+            }
+
+            // ---- Статус форм-фактора ----
+            const formStatus = document.getElementById('formStatus');
+            if (mb && pcCase) {
+                if (pcCase.formFactors.includes(mb.formFactor)) {
+                    formStatus.innerHTML = `<span class="status-dot green"></span><span class="text-green-400">Корпус поддерживает ${mb.formFactor}</span>`;
+                } else {
+                    formStatus.innerHTML = `<span class="status-dot red"></span><span class="text-red-400">Корпус не поддерживает ${mb.formFactor}</span>`;
+                }
+            } else {
+                formStatus.innerHTML = '<span class="status-dot gray"></span><span class="text-slate-400">Форм-фактор не выбран</span>';
+            }
+
+            // ---- Статус мощности ----
+            const powerStatus = document.getElementById('powerStatus');
+            let powerEnough = false;
+            if (psu && totalPower > 0) {
+                const recommended = Math.ceil(totalPower * 1.3);
+                if (psu.power >= recommended) {
+                    powerEnough = true;
+                    powerStatus.innerHTML = `<span class="status-dot green"></span><span class="text-green-400">БП достаточен (реком. ${recommended} Вт)</span>`;
+                } else if (psu.power >= totalPower) {
+                    powerEnough = true;
+                    powerStatus.innerHTML = `<span class="status-dot amber"></span><span class="text-amber-400">Хватает без запаса (реком. ${recommended} Вт)</span>`;
+                } else {
+                    powerStatus.innerHTML = `<span class="status-dot red"></span><span class="text-red-400">Мало! Нужно минимум ${recommended} Вт</span>`;
+                }
+            } else {
+                powerStatus.innerHTML = '<span class="status-dot gray"></span><span class="text-slate-400">Мощность не проверена</span>';
+            }
+
+            // ---- Общий бейдж ----
+            const badge = document.getElementById('overallBadge');
+            const allSelected = cpu && mb && gpu && psu && pcCase;
+            const socketsCompatible = cpu && mb && cpu.socket === mb.socket;
+            const formCompatible = mb && pcCase && pcCase.formFactors.includes(mb.formFactor);
+            const ready = allSelected && socketsCompatible && formCompatible && powerEnough;
+
+            if (ready) {
+                badge.textContent = '✓ Готова';
+                badge.className = 'overall-badge text-xs font-semibold px-3 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 shadow-lg shadow-green-500/20';
+            } else if (allSelected) {
+                badge.textContent = '! Есть проблемы';
+                badge.className = 'overall-badge text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            } else {
+                badge.textContent = 'Не готова';
+                badge.className = 'overall-badge text-xs font-semibold px-3 py-1 rounded-full bg-slate-700/50 text-slate-400';
+            }
+
+            // ---- Кнопка ----
+            document.getElementById('saveBtn').disabled = !ready;
+
+            // ---- Тесты в играх ----
+            renderGameTests(cpu, gpu);
+
+            // ---- Анимация вспышки статусов ----
+            ['socketStatus', 'formStatus', 'powerStatus'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('changed');
+                void el.offsetWidth;
+                el.classList.add('changed');
+            });
+        }
+
+        // ========================
+        // Инициализация
+        // ========================
+        document.addEventListener('DOMContentLoaded', () => {
+            populateSelect('cpuSelect', 'processors', 'Выберите процессор...',
+                item => `${item.name} (${item.socket}) — ${formatPrice(item.price)}`);
+            populateSelect('mbSelect', 'motherboards', 'Выберите материнскую плату...',
+                item => `${item.name} (${item.formFactor}) — ${formatPrice(item.price)}`);
+            populateSelect('gpuSelect', 'gpus', 'Выберите видеокарту...',
+                item => `${item.name} — ${formatPrice(item.price)}`);
+            populateSelect('psuSelect', 'psus', 'Выберите блок питания...',
+                item => `${item.name} — ${formatPrice(item.price)}`);
+            populateSelect('caseSelect', 'cases', 'Выберите корпус...',
+                item => `${item.name} (${item.formFactors.join('/')}) — ${formatPrice(item.price)}`);
+
+            const saved = localStorage.getItem('pcBuild');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                    document.getElementById('cpuSelect').value = state.cpuId || '';
+                    document.getElementById('mbSelect').value = state.mbId || '';
+                    document.getElementById('gpuSelect').value = state.gpuId || '';
+                    document.getElementById('psuSelect').value = state.psuId || '';
+                    document.getElementById('caseSelect').value = state.caseId || '';
+                } catch (e) {}
+            }
+
+            document.getElementById('cpuSelect').addEventListener('change', e => { state.cpuId = e.target.value; updateUI(); });
+            document.getElementById('mbSelect').addEventListener('change', e => { state.mbId = e.target.value; updateUI(); });
+            document.getElementById('gpuSelect').addEventListener('change', e => { state.gpuId = e.target.value; updateUI(); });
+            document.getElementById('psuSelect').addEventListener('change', e => { state.psuId = e.target.value; updateUI(); });
+            document.getElementById('caseSelect').addEventListener('change', e => { state.caseId = e.target.value; updateUI(); });
+
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                localStorage.setItem('pcBuild', JSON.stringify(state));
+                const msg = document.getElementById('saveMessage');
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 2500);
+            });
+
+            updateUI();
+        });
     </script>
 </body>
 </html>
